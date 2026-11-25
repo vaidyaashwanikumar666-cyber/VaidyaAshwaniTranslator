@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Vaidya Ashwani Live Call Translator</title>
+<meta name="description" content="Live Video / Voice call translator – Bharat ki 22 bhashayein + duniya ki 130+ bhashayein">
+<meta name="theme-color" content="#063d27">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ SPLASH ============ -->
+<div id="splash" class="splash">
+  <div class="splashLogo"><img src="icons/icon-512.png" alt=""></div>
+  <h1>Vaidya Ashwani</h1>
+  <p>Live Call Translator</p>
+  <div class="splashLangs">नमस्ते · வணக்கம் · নমস্কার · Hello · مرحبا · 你好</div>
+</div>
+
+<div id="app">
+
+  <!-- ============ SETUP / ONBOARDING ============ -->
+  <section id="scrSetup" class="screen hidden">
+    <div class="hero">
+      <img src="icons/icon-192.png" alt="" class="heroLogo">
+      <h1>Vaidya Ashwani<br><span>Live Call Translator</span></h1>
+      <p>Aap apni bhasha me boliye, saamne wala apni bhasha me sunega.</p>
+      <div class="chips"><span>🇮🇳 22 Bhartiya bhashayein</span><span>🌍 130+ videshi</span><span>📄 PDF</span><span>🎧 Recording</span></div>
+    </div>
+    <div class="sheetCard">
+      <h2>Shuru karein</h2>
+      <label class="field"><span>Aapka naam</span>
+        <input id="setName" type="text" placeholder="जैसे: Vaidya Ashwani" autocomplete="name">
+      </label>
+      <label class="field"><span>Mobile number (yahi aapki Call ID hogi)</span>
+        <input id="setNumber" type="tel" inputmode="tel" placeholder="+91 98XXXXXXXX" autocomplete="tel">
+      </label>
+      <div class="field"><span>Aapki bhasha</span>
+        <button type="button" class="langBtn" data-target="setLang"><b>Hindi – हिन्दी</b><i>▾</i></button>
+        <input type="hidden" id="setLang" value="hi-IN">
+      </div>
+      <button id="btnSaveSetup" class="btn primary block">Aage badhein →</button>
+      <p class="tiny muted center">Aage badhne par aap <a href="privacy.html" target="_blank">Privacy Policy</a> se sahmat hain.</p>
+    </div>
+  </section>
+
+  <!-- ============ HOME TAB ============ -->
+  <section id="scrHome" class="screen hidden withNav">
+    <div class="homeHead">
+      <div class="headRow">
+        <div>
+          <div class="hello">Namaste 🙏</div>
+          <div id="meName" class="meName">—</div>
+        </div>
+        <span id="netStatus" class="pill off"><i></i><b>Offline</b></span>
+      </div>
+      <div class="idCard">
+        <div>
+          <div class="tiny op">Aapki Call ID</div>
+          <div id="meNumber" class="idNum">—</div>
+        </div>
+        <button class="langMini" id="btnMyLang">🗣️ <span id="meLang">Hindi</span></button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="dialCard">
+        <a id="apkBanner" class="apkBanner hidden" href="#">📲 <span><b>Android App download karein</b><small>Behtar awaaz aur translation ke liye</small></span><i>⬇</i></a>
+        <label class="field"><span>Kisko call karna hai? (number)</span>
+          <div class="dialRow">
+            <input id="callNumber" type="tel" inputmode="tel" placeholder="+91 9XXXXXXXXX" list="contactsList">
+            <button id="btnContacts" class="iconBtn" title="Recent">🕘</button>
+          </div>
+          <datalist id="contactsList"></datalist>
+        </label>
+        <div class="bigActions">
+          <button id="btnVideoCall" class="action video"><span class="ico">🎥</span><b>Video Call</b><small>Translated</small></button>
+          <button id="btnAudioCall" class="action voice"><span class="ico">📞</span><b>Voice Call</b><small>Translated</small></button>
+        </div>
+        <p class="tiny muted">Saamne wale ke phone me bhi ye app hona chahiye. <a href="#" id="lnkInvite">Unhe invite bhejein →</a></p>
+      </div>
+
+      <h3 class="secTitle">WhatsApp / SIM Call ke liye</h3>
+      <button id="btnSpeakerMode" class="wideTile">
+        <span class="ico">🔊</span>
+        <span class="txt"><b>Speaker Translator</b><small>Call ko speaker par daalein, app dono taraf translate karke bolega</small></span>
+        <span class="arrow">›</span>
+      </button>
+      <div class="twoTiles">
+        <button id="btnWhatsApp" class="tile wa"><span class="ico">💬</span><b>WhatsApp</b></button>
+        <button id="btnPhone" class="tile sim"><span class="ico">📱</span><b>SIM Call</b></button>
+      </div>
+
+      <h3 class="secTitle">Kaise kaam karta hai</h3>
+      <div class="howList">
+        <div><span>1</span>Aap Hindi me bolte hain</div>
+        <div><span>2</span>App turant saamne wale ki bhasha me translate karta hai</div>
+        <div><span>3</span>Saamne wala apni bhasha me sunta hai, aur jawab aapko Hindi me milta hai</div>
+        <div><span>4</span>Call khatam hone par PDF aur recording save hoti hai</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HISTORY TAB ============ -->
+  <section id="scrHistory" class="screen hidden withNav">
+    <div class="pageHead"><h2>🗂️ Call History</h2><p>Har call ki PDF aur voice recording</p></div>
+    <div class="content">
+      <div id="historyList" class="history"></div>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS TAB ============ -->
+  <section id="scrSettings" class="screen hidden withNav">
+    <div class="pageHead"><h2>⚙️ Settings</h2><p>Apne hisaab se app set karein</p></div>
+    <div class="content">
+      <div class="setGroup">
+        <button id="btnEditProfile" class="setRow"><span>👤 Profile (naam, number, bhasha)</span><i>›</i></button>
+      </div>
+      <div class="setGroup">
+        <label class="setRow"><span>🔊 Translation bol kar sunayein</span><input type="checkbox" id="optTTS" class="switch" checked></label>
+        <label class="setRow"><span>🎧 Har call record karein</span><input type="checkbox" id="optRecord" class="switch" checked></label>
+        <label class="setRow"><span>🌐 Online voice (agar phone me voice na ho)</span><input type="checkbox" id="optOnlineTTS" class="switch" checked></label>
+      </div>
+      <div class="setGroup pad">
+        <label class="field"><span>Saamne wale ki asli awaaz ka volume</span><input type="range" id="optOrigVol" min="0" max="100" value="15"></label>
+        <label class="field"><span>Translation bolne ki speed</span><input type="range" id="optRate" min="60" max="150" value="100"></label>
+        <button id="btnTestVoice" class="btn ghost block">🔈 Voice test karein</button>
+      </div>
+      <details class="setGroup pad">
+        <summary>🛠️ Advanced (network)</summary>
+        <label class="field"><span>TURN server – alag network par call na lage to</span>
+          <input id="optTurn" type="text" placeholder="turn:host:3478|username|password"></label>
+        <label class="field"><span>Apna call server (khaali = free server)</span>
+          <input id="optServer" type="text" placeholder="myserver.com:443/peer"></label>
+      </details>
+      <div class="setGroup">
+        <a class="setRow" href="privacy.html" target="_blank"><span>🔒 Privacy Policy</span><i>›</i></a>
+        <button class="setRow" id="btnShareApp"><span>📤 App share karein</span><i>›</i></button>
+      </div>
+      <p class="tiny muted center">Vaidya Ashwani Live Call Translator · v<span id="appVer">1.0</span></p>
+    </div>
+  </section>
+
+  <!-- ============ BOTTOM NAV ============ -->
+  <nav id="bottomNav" class="bottomNav hidden">
+    <button data-tab="scrHome" class="on"><span>🏠</span>Home</button>
+    <button data-tab="scrHistory"><span>🗂️</span>History</button>
+    <button data-tab="scrSettings"><span>⚙️</span>Settings</button>
+  </nav>
+
+  <!-- ============ CALL ============ -->
+  <section id="scrCall" class="screen hidden callscreen">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <div id="audioOnlyBadge" class="audioBadge hidden">
+      <div class="pulseRing"><div class="avatar" id="remoteAvatar">?</div></div>
+    </div>
+    <video id="localVideo" autoplay playsinline muted></video>
+    <div class="callTop">
+      <div id="remoteName" class="cName">Connecting…</div>
+      <div class="cSub"><span id="remoteLang">—</span> · <span id="callTimer">00:00</span> <span id="recDot" class="rec hidden">● REC</span></div>
+    </div>
+    <div class="callBottom">
+      <div id="callTranscript" class="transcript"></div>
+      <div id="liveCaption" class="liveCaption"></div>
+      <form id="typeForm" class="typeForm">
+        <input id="typeInput" type="text" placeholder="Likh kar bhejein…">
+        <button type="submit">➤</button>
+      </form>
+      <div class="controls">
+        <button id="btnMic" class="ctrl on" title="Mic">🎙️</button>
+        <button id="btnCam" class="ctrl on" title="Camera">🎥</button>
+        <button id="btnFlip" class="ctrl on" title="Camera palat">🔄</button>
+        <button id="btnVoiceOut" class="ctrl on" title="Translation voice">🔊</button>
+        <button id="btnEnd" class="ctrl end" title="Call band">📵</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SPEAKER MODE ============ -->
+  <section id="scrSpeaker" class="screen hidden spkScreen">
+    <div class="spkHead">
+      <button id="btnSpkClose" class="backBtn">‹</button>
+      <div><b>Speaker Translator</b><small>WhatsApp / SIM call speaker par rakhein</small></div>
+    </div>
+    <div class="spkLangs">
+      <div class="spkL me"><small>Aap</small><b id="spkMeLang">Hindi</b></div>
+      <span class="swap">⇄</span>
+      <button class="spkL them langBtn" data-target="spkOtherLang"><small>Saamne wala</small><b>English</b></button>
+      <input type="hidden" id="spkOtherLang" value="en-US">
+    </div>
+    <label class="autoRow"><input type="checkbox" id="spkAuto" class="switch" checked><span>Auto – baari baari se dono ko sunein</span></label>
+    <div id="spkTranscript" class="transcript spkT"></div>
+    <div id="spkCaption" class="liveCaption"></div>
+    <div class="spkButtons">
+      <button id="btnSpkMe" class="spkBtn me"><span class="mic">🎙️</span><span class="who">Main bolunga</span></button>
+      <button id="btnSpkThem" class="spkBtn them"><span class="mic">🎙️</span><span class="who">Wo bolenge</span></button>
+    </div>
+    <button id="btnSpkSave" class="btn primary block">💾 Khatam karein + PDF</button>
+  </section>
+
+  <!-- ============ LANGUAGE SHEET ============ -->
+  <div id="langSheet" class="sheet hidden">
+    <div class="sheetBg"></div>
+    <div class="sheetBox">
+      <div class="grip"></div>
+      <h3>Bhasha chunein</h3>
+      <input id="langSearch" type="search" placeholder="🔍 Bhasha dhoondhein… (Hindi, Tamil, English…)">
+      <div id="langList" class="langList"></div>
+    </div>
+  </div>
+
+  <!-- ============ MODALS ============ -->
+  <div id="modalIncoming" class="modal incoming hidden">
+    <div class="inBox">
+      <div class="tiny op">Vaidya Ashwani Translator</div>
+      <div class="pulseRing big"><div class="avatar" id="inAvatar">?</div></div>
+      <h2 id="inName">Incoming call</h2>
+      <p id="inInfo"></p>
+      <div class="inBtns">
+        <button id="btnReject" class="round red">📵<small>Kaatein</small></button>
+        <button id="btnAccept" class="round green">📞<small>Uthayein</small></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalSummary" class="modal hidden">
+    <div class="modalBox">
+      <div class="okIcon">✅</div>
+      <h2>Call khatam</h2>
+      <p id="sumInfo" class="muted"></p>
+      <div class="col">
+        <button id="btnSumPdf" class="btn primary block">📄 Conversation PDF</button>
+        <button id="btnSumAudio" class="btn ghost block">🎧 Voice recording</button>
+        <button id="btnSumClose" class="btn text block">Theek hai</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <audio id="remoteAudio" autoplay></audio>
+</div>
+
+<div id="pdfHolder" style="position:fixed;left:-10000px;top:0;"></div>
+
+<script src="lib/peerjs.min.js"></script>
+<script src="lib/html2pdf.bundle.min.js"></script>
+<script src="languages.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
