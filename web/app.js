@@ -62,7 +62,11 @@ const audioDB = {
 /* ------------------------- State ------------------------- */
 const S = {
   profile: store.get('vat_profile', null),
-  settings: Object.assign({ tts: true, record: true, onlineTTS: true, origVol: 15, rate: 100, turn: '', server: '' }, store.get('vat_settings', {})),
+  settings: (() => {
+    const st = Object.assign({ tts: true, record: true, onlineTTS: true, origVol: 100, hdVoice: true, rate: 100, turn: '', server: '' }, store.get('vat_settings', {}));
+    if (!st.v2) { st.origVol = 100; st.hdVoice = true; st.v2 = true; }   // purani setting (15%) se upgrade: asli awaaz poori
+    return st;
+  })(),
   peer: null, call: null, conn: null, pendingCall: null, pendingConn: null,
   localStream: null, remoteStream: null, video: true, facing: 'user',
   remote: null, session: null, recorder: null, recChunks: [], recMix: null,
@@ -201,9 +205,9 @@ const TTS = {
   next() {
     if (this.busy || !this.queue.length) return;
     const { text, langId } = this.queue.shift();
-    this.busy = true; Recog.pauseForTTS(true);
+    this.busy = true; Recog.pauseForTTS(true); remoteVolume(true);
     let finished = false;
-    const done = () => { if (finished) return; finished = true; this.busy = false; this._doneCb = null; Recog.pauseForTTS(false); setTimeout(() => this.next(), 60); };
+    const done = () => { if (finished) return; finished = true; this.busy = false; this._doneCb = null; Recog.pauseForTTS(false); if (!this.queue.length) remoteVolume(false); setTimeout(() => this.next(), 60); };
     const safety = setTimeout(done, 3000 + text.length * 250);
     const fin = () => { clearTimeout(safety); done(); };
 
@@ -394,14 +398,64 @@ function ringtone(on) {
   } catch (e) { }
 }
 
+/* ---------- Asli awaaz ki quality ----------
+   HD mode: noise filter + auto-volume band (ye awaaz ko robotic/patli bana dete hain),
+   echo cancel chalu (speaker par goonj na ho), 48 kHz, aur Opus 64 kbps HD. */
+function micConstraints() {
+  const hd = S.settings.hdVoice !== false;
+  return {
+    echoCancellation: true,
+    noiseSuppression: !hd,
+    autoGainControl: !hd,
+    channelCount: 1,
+    sampleRate: 48000,
+    sampleSize: 16,
+  };
+}
+function hdAudioSdp(sdp) {
+  if (S.settings.hdVoice === false) return sdp;
+  const m = sdp.match(/a=rtpmap:(\d+) opus\/48000/i);
+  if (!m) return sdp;
+  const pt = m[1];
+  const params = { maxaveragebitrate: 64000, maxplaybackrate: 48000, sprop_maxcapturerate: 48000, stereo: 0, useinbandfec: 1, usedtx: 0, cbr: 0 };
+  const re = new RegExp(`a=fmtp:${pt} ([^\\r\\n]*)`);
+  const fm = sdp.match(re);
+  if (fm) {
+    const cur = {};
+    fm[1].split(';').forEach(kv => { const [k, v] = kv.split('='); if (k) cur[k.trim()] = (v || '').trim(); });
+    Object.assign(cur, params);
+    const line = `a=fmtp:${pt} ` + Object.entries(cur).map(([k, v]) => `${k}=${v}`).join(';');
+    return sdp.replace(re, line);
+  }
+  return sdp.replace(`a=rtpmap:${pt} opus/48000/2`, `a=rtpmap:${pt} opus/48000/2\r\na=fmtp:${pt} ` + Object.entries(params).map(([k, v]) => `${k}=${v}`).join(';'));
+}
+async function boostSender(call) {   // browser ko bhi bitrate badhane do
+  try {
+    const pc = call.peerConnection; if (!pc) return;
+    for (const snd of pc.getSenders()) {
+      if (!snd.track || snd.track.kind !== 'audio') continue;
+      const p = snd.getParameters(); if (!p.encodings || !p.encodings.length) p.encodings = [{}];
+      p.encodings[0].maxBitrate = S.settings.hdVoice === false ? 32000 : 64000;
+      p.encodings[0].priority = 'high'; p.encodings[0].networkPriority = 'high';
+      await snd.setParameters(p);
+    }
+  } catch (e) { /* purane browser */ }
+}
+// Translation bolte waqt saamne wale ki asli awaaz thodi dheemi (ducking), baaki samay poori
+function remoteVolume(duck) {
+  const v = (S.settings.origVol ?? 100) / 100 * (duck ? 0.25 : 1);
+  try { $('remoteVideo').volume = v; $('remoteAudio').volume = v; } catch (e) { }
+}
+
 async function getMedia(video) {
   const c = {
-    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    audio: micConstraints(),
     video: video ? { facingMode: S.facing, width: { ideal: 640 }, height: { ideal: 480 } } : false,
   };
   try { return await navigator.mediaDevices.getUserMedia(c); }
   catch (e) {
     if (video) { toast('Camera nahi mila – sirf voice call'); return navigator.mediaDevices.getUserMedia({ audio: c.audio }); }
+    try { return await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true }, video: false }); } catch (e2) { }
     throw e;
   }
 }
@@ -424,7 +478,7 @@ async function startCall(video) {
   $('remoteLang').textContent = '+' + normNumber(num);
   const meta = { name: S.profile.name, number: S.guest ? '' : normNumber(S.profile.number), lang: S.profile.lang, video: S.video, guest: !!S.guest };
   setupConn(S.peer.connect(rid, { metadata: meta, reliable: true, serialization: 'json' }));
-  const call = S.peer.call(rid, S.localStream, { metadata: meta });
+  const call = S.peer.call(rid, S.localStream, { metadata: meta, sdpTransform: hdAudioSdp });
   if (!call) { toast('Call shuru nahi ho payi'); endCall(false); return; }
   setupCall(call);
   S.ringTimeout = setTimeout(() => { if (!S.remoteStream && S.session) { toast('Koi jawab nahi mila'); endCall(false); } }, 45000);
@@ -443,7 +497,7 @@ async function acceptCall() {
   beginSession('call');
   enterCallUI();
   updateRemoteUI();
-  call.answer(S.localStream);
+  call.answer(S.localStream, { sdpTransform: hdAudioSdp });
   setupCall(call);
   if (S.pendingConn) setupConn(S.pendingConn);
 }
@@ -464,10 +518,12 @@ function setupCall(call) {
     S.remoteStream = stream;
     const hasVideo = stream.getVideoTracks().length > 0 && S.video;
     const rv = $('remoteVideo');
-    rv.srcObject = stream; rv.volume = S.settings.origVol / 100;
+    rv.srcObject = stream;
     rv.classList.toggle('hidden', !hasVideo);
     $('audioOnlyBadge').classList.toggle('hidden', hasVideo);
-    if (!hasVideo) { $('remoteAudio').srcObject = stream; $('remoteAudio').volume = S.settings.origVol / 100; }
+    if (!hasVideo) { $('remoteAudio').srcObject = stream; }
+    remoteVolume(false);
+    boostSender(call);
     rv.play().catch(() => { });
     updateRemoteUI();
     startTimer();
@@ -838,17 +894,17 @@ function saveSetup() {
 }
 function bindSettings() {
   const st = S.settings;
-  $('optTTS').checked = st.tts; $('optRecord').checked = st.record; $('optOnlineTTS').checked = st.onlineTTS;
+  $('optTTS').checked = st.tts; $('optRecord').checked = st.record; $('optOnlineTTS').checked = st.onlineTTS; $('optHD').checked = st.hdVoice !== false;
   $('optOrigVol').value = st.origVol; $('optRate').value = st.rate; $('optTurn').value = st.turn; $('optServer').value = st.server;
   const save = () => {
-    st.tts = $('optTTS').checked; st.record = $('optRecord').checked; st.onlineTTS = $('optOnlineTTS').checked;
+    st.tts = $('optTTS').checked; st.record = $('optRecord').checked; st.onlineTTS = $('optOnlineTTS').checked; st.hdVoice = $('optHD').checked;
     st.origVol = +$('optOrigVol').value; st.rate = +$('optRate').value;
     const netChanged = st.turn !== $('optTurn').value.trim() || st.server !== $('optServer').value.trim();
     st.turn = $('optTurn').value.trim(); st.server = $('optServer').value.trim();
     store.set('vat_settings', st);
     if (netChanged && S.profile && !S.session) startPeer();
   };
-  ['optTTS', 'optRecord', 'optOnlineTTS', 'optOrigVol', 'optRate', 'optTurn', 'optServer'].forEach(id => $(id).addEventListener('change', save));
+  ['optTTS', 'optRecord', 'optOnlineTTS', 'optHD', 'optOrigVol', 'optRate', 'optTurn', 'optServer'].forEach(id => $(id).addEventListener('change', save));
 }
 function shareText(text) {
   if (NB) { try { NB.shareText(text); return; } catch (e) { } }
@@ -987,9 +1043,7 @@ function bind() {
     const t = await translate('Namaste, main Vaidya Ashwani Live Call Translator hoon.', 'hi-IN', l);
     TTS.enabled = true; TTS.speak(t, l);
   };
-  $('optOrigVol').addEventListener('input', () => {
-    const v = +$('optOrigVol').value / 100; $('remoteVideo').volume = v; $('remoteAudio').volume = v;
-  });
+  $('optOrigVol').addEventListener('input', () => { S.settings.origVol = +$('optOrigVol').value; remoteVolume(TTS.busy); });
   window.addEventListener('beforeunload', (e) => { if (S.session) { e.preventDefault(); e.returnValue = ''; } });
 }
 
@@ -1033,6 +1087,7 @@ function joinAsGuest(video) {
 function init() {
   // hidden input for quick language change from home
   const q = document.createElement('input'); q.type = 'hidden'; q.id = 'myLangQuick'; document.body.appendChild(q);
+  store.set('vat_settings', S.settings);
   bind(); bindSettings(); renderHistory(); renderContacts();
   setLangValue('setLang', S.profile?.lang || 'hi-IN');
   setLangValue('spkOtherLang', store.get('vat_spk_other', 'en-US'));
