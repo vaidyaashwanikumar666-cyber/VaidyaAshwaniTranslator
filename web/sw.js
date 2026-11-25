@@ -1,5 +1,5 @@
 // Vaidya Ashwani Live Call Translator – service worker (app ko install-able + fast banata hai)
-const CACHE = 'vaidya-lct-v5';
+const CACHE = 'vaidya-lct-v6';
 const FILES = ['./', './index.html', './style.css', './app.js', './admin.js', './firebase-config.js', './languages.js', './manifest.json', './privacy.html',
   './lib/peerjs.min.js', './lib/html2pdf.bundle.min.js', './icons/icon-192.png', './icons/icon-512.png'];
 

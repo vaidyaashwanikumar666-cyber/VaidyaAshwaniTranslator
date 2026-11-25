@@ -90,7 +90,6 @@ Mujhe bataayein, main ye 2 cheezein badal dunga:
 Code push karte hi naya AAB Release me apne aap aa jata hai, aur versionCode apne aap badhta hai. Phir Play Console → Production (ya testing) → Create new release → naya AAB upload karein.
 
 ## ⚠️ Dhyan rakhne wali baatein
-- **App icon me WhatsApp ka logo aur "WhatsApp Live Translation" likha hai.** Play Store doosri company ka logo ya trademark icon me lagane par app reject kar sakta hai (*Impersonation / Intellectual Property* policy). App WhatsApp call ke andar seedha translation bhi nahi karta, isliye ye "misleading claim" bhi maana ja sakta hai. Reject hone par icon ka aisa version lagayein jisme WhatsApp ka logo aur naam na ho.
 - **Admin OTP (Firebase):** setup [FIREBASE-SETUP.md](FIREBASE-SETUP.md) me hai. Data Safety form me iske liye kuch naya nahi bharna, kyunki ye sirf Admin ke apne number par jaata hai, par Privacy Policy me iska zikr kar diya hai.
 - **Upload key** (`upload-key.jks` + password) kabhi na khoyein. Kho jaaye to Play Console → *App integrity* se reset ki request ho sakti hai, par usme samay lagta hai.
 - Translation ke liye abhi Google ki **free public translation service** use hoti hai. Zyada users hone par ise rate-limit ho sakti hai. Tab Google Cloud Translation API (paid) jodna behtar rahega, main jod sakta hoon.
