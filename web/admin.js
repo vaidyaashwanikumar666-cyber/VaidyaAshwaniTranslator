@@ -15,6 +15,9 @@ const Admin = (() => {
     hash: 'e0add96ba303fddd8488141a5bf55c8452ad4815573b9c829054dec15bd8b855',
   };
   const DATA_KEY = 'vat_patients_enc';
+  // Password bhoolne par: sirf is recovery number par OTP (number code me nahi, sirf uska hash)
+  const RECOVERY = { salt: 'vaidya-lct-recovery-v1', hash: 'af813aba02d77c287e7a8008bdb5373350c4e6e0f9e9a0dec9272c4ff418f654' };
+  const DEK_PW = 'vat_dek_pw', DEK_REC = 'vat_dek_rec', REC_SECRET = 'vat_rec';
   const IDLE_MS = 30 * 60 * 1000;   // 30 minute kuch na karne par logout
 
   const A = { key: null, name: '', patients: [], current: null, linkPatientId: null, fails: 0, lockUntil: 0, idleT: null, editId: null };
@@ -41,6 +44,21 @@ const Admin = (() => {
     const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(rec.iv) }, key, unb64(rec.ct));
     return JSON.parse(dec.decode(pt));
   }
+  async function newDEK() { return crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']); }
+  async function wrapDEK(kek, dek) {
+    const raw = await crypto.subtle.exportKey('raw', dek);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    return { v: 1, iv: b64(iv), ct: b64(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, kek, raw)) };
+  }
+  async function unwrapDEK(kek, rec) {
+    const raw = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(rec.iv) }, kek, unb64(rec.ct));
+    return crypto.subtle.importKey('raw', raw, 'AES-GCM', true, ['encrypt', 'decrypt']);
+  }
+  async function recoveryKEK() {
+    let sec = store.get(REC_SECRET, null);
+    if (!sec) { sec = b64(crypto.getRandomValues(new Uint8Array(32))); store.set(REC_SECRET, sec); }
+    return crypto.subtle.importKey('raw', unb64(sec), 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
   const normName = (s) => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
   const adminCfg = () => store.get('vat_admin', null) || DEFAULT_ADMIN;
 
@@ -57,14 +75,22 @@ const Admin = (() => {
       throw new Error('Admin name ya password galat hai');
     }
     A.fails = 0;
-    const key = await deriveKey(pw);
+    const kek = await deriveKey(pw);
     const raw = store.get(DATA_KEY, null);
-    let list = [];
-    if (raw) {
-      try { list = await decryptJSON(key, raw); }
-      catch (e) { throw new Error('Patient data khul nahi paya (password badla gaya tha?)'); }
+    let dek, list = [];
+    const wp = store.get(DEK_PW, null);
+    if (wp) {
+      try { dek = await unwrapDEK(kek, wp); } catch (e) { throw new Error('Patient data ki chaabi nahi khuli'); }
+      if (raw) { try { list = await decryptJSON(dek, raw); } catch (e) { throw new Error('Patient data khul nahi paya'); } }
+    } else {
+      // purana tareeka (data seedha password se encrypted) → naye "data key" tareeke par
+      if (raw) { try { list = await decryptJSON(kek, raw); } catch (e) { throw new Error('Patient data khul nahi paya (password badla gaya tha?)'); } }
+      dek = await newDEK();
+      store.set(DEK_PW, await wrapDEK(kek, dek));
+      store.set(DATA_KEY, await encryptJSON(dek, list));
     }
-    A.key = key; A.name = cfg.name; A.patients = Array.isArray(list) ? list : [];
+    if (!store.get(DEK_REC, null)) store.set(DEK_REC, await wrapDEK(await recoveryKEK(), dek));
+    A.key = dek; A.name = cfg.name; A.patients = Array.isArray(list) ? list : [];
     onLoginChange();
     bumpIdle();
     toast('🔓 Admin login: ' + cfg.name);
@@ -88,11 +114,106 @@ const Admin = (() => {
     const cfg = adminCfg();
     if ((await sha256hex(cfg.salt + ':' + oldPw)) !== cfg.hash) throw new Error('Purana password galat hai');
     if (newPw.length < 8 || !/[A-Za-z]/.test(newPw) || !/\d/.test(newPw)) throw new Error('Naya password kam se kam 8 akshar ka ho, jisme letter aur number dono hon');
+    await setNewPassword(newPw, A.key);
+  }
+  function checkStrength(pw) {
+    if (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw)) throw new Error('Naya password kam se kam 8 akshar ka ho, jisme letter aur number dono hon');
+  }
+  /** Naya password set: sirf data-key ka taala badalta hai, data wahi rehta hai */
+  async function setNewPassword(newPw, dek) {
+    checkStrength(newPw);
+    const cfg = adminCfg();
     const salt = 'vaidya-lct-admin-' + Math.random().toString(36).slice(2, 10);
-    const newKey = await deriveKey(newPw);
-    store.set(DATA_KEY, await encryptJSON(newKey, A.patients));   // data naye password se dobara encrypt
+    if (dek) store.set(DEK_PW, await wrapDEK(await deriveKey(newPw), dek));
+    else if (store.get(DATA_KEY, null)) throw new Error('Patient data ki chaabi nahi mili');
     store.set('vat_admin', { name: cfg.name, salt, hash: await sha256hex(salt + ':' + newPw) });
-    A.key = newKey;
+  }
+
+  /* ---------------- Password bhool gaye: OTP (Firebase Phone Auth) ---------------- */
+  const OTP = { phone: '', confirm: null, ok: false, verifier: null, fbP: null };
+  function loadScript(src) {
+    return new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = () => rej(new Error('load ' + src)); document.head.appendChild(sc); });
+  }
+  function loadFirebase() {
+    if (!window.FIREBASE_CONFIG) return Promise.reject(new Error('NO_CONFIG'));
+    if (!OTP.fbP) OTP.fbP = (async () => {
+      if (!window.firebase) { await loadScript('lib/firebase/firebase-app-compat.js'); await loadScript('lib/firebase/firebase-auth-compat.js'); }
+      if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+      const auth = firebase.auth(); auth.languageCode = 'hi';
+      return auth;
+    })().catch(e => { OTP.fbP = null; throw e; });
+    return OTP.fbP;
+  }
+  function otpError(e) {
+    const c = e && (e.code || e.message) || '';
+    if (c === 'NO_CONFIG') return 'OTP service abhi set nahi hai (Firebase config nahi daala gaya). App banane wale se Firebase set karwayein.';
+    if (c.includes('invalid-verification-code')) return 'OTP galat hai. Dobara dekh kar daalein.';
+    if (c.includes('code-expired')) return 'OTP ka samay khatam ho gaya. Naya OTP mangwayein.';
+    if (c.includes('too-many-requests') || c.includes('quota')) return 'Bahut zyada koshish ho gayi. Thodi der baad try karein.';
+    if (c.includes('unauthorized-domain') || c.includes('captcha-check-failed')) return 'Is app ka domain Firebase me authorized nahi hai (Authentication → Settings → Authorized domains).';
+    if (c.includes('operation-not-allowed')) return 'Firebase me Phone sign-in chalu nahi hai (Authentication → Sign-in method → Phone).';
+    if (c.includes('billing')) return 'Firebase project me billing (Blaze plan) chalu karni hogi.';
+    if (c.includes('network')) return 'Internet check karein.';
+    return 'OTP nahi bhej/verify kar paye: ' + c;
+  }
+  function fgStep(n) {
+    ['fgStep1', 'fgStep2', 'fgStep3'].forEach((id, i) => $(id).classList.toggle('hidden', i + 1 !== n));
+    $('fgErr').textContent = '';
+  }
+  function openForgot() {
+    OTP.phone = ''; OTP.confirm = null; OTP.ok = false;
+    $('fgPhone').value = ''; $('fgOtp').value = ''; $('fgNew').value = ''; $('fgNew2').value = '';
+    fgStep(1);
+    $('modalLogin').classList.add('hidden');
+    $('modalForgot').classList.remove('hidden');
+  }
+  async function sendOtp() {
+    $('fgErr').textContent = '';
+    const phone = '+' + normNumber($('fgPhone').value);
+    if ((await sha256hex(RECOVERY.salt + ':' + phone)) !== RECOVERY.hash) { $('fgErr').textContent = '⚠️ Ye Admin ka recovery number nahi hai. OTP sirf registered number par hi jaata hai.'; return; }
+    $('btnFgSend').disabled = true; $('btnFgSend').textContent = 'OTP bhej rahe hain…';
+    try {
+      const auth = await loadFirebase();
+      if (!OTP.verifier) OTP.verifier = new firebase.auth.RecaptchaVerifier('recaptchaBox', { size: 'invisible' });
+      OTP.confirm = await auth.signInWithPhoneNumber(phone, OTP.verifier);
+      OTP.phone = phone;
+      $('fgSentTo').textContent = phone.slice(0, 5) + '●●●●●' + phone.slice(-3);
+      fgStep(2); setTimeout(() => $('fgOtp').focus(), 50);
+      toast('📩 OTP bhej diya gaya');
+    } catch (e) {
+      console.warn(e); $('fgErr').textContent = '⚠️ ' + otpError(e);
+      try { OTP.verifier && OTP.verifier.clear(); } catch (x) { } OTP.verifier = null; $('recaptchaBox').innerHTML = '';
+    } finally { $('btnFgSend').disabled = false; $('btnFgSend').textContent = '📩 OTP bhejein'; }
+  }
+  async function verifyOtp() {
+    const code = $('fgOtp').value.replace(/\D/g, '');
+    if (code.length < 6) { $('fgErr').textContent = '⚠️ 6 ankon ka OTP daalein'; return; }
+    $('btnFgVerify').disabled = true;
+    try {
+      const cred = await OTP.confirm.confirm(code);
+      if (!cred.user || cred.user.phoneNumber !== OTP.phone) throw new Error('Number match nahi hua');
+      OTP.ok = true;
+      try { await firebase.auth().signOut(); } catch (e) { }
+      fgStep(3); setTimeout(() => $('fgNew').focus(), 50);
+    } catch (e) { $('fgErr').textContent = '⚠️ ' + otpError(e); }
+    finally { $('btnFgVerify').disabled = false; }
+  }
+  async function resetPassword() {
+    if (!OTP.ok) { fgStep(1); return; }
+    const pw = $('fgNew').value;
+    if (pw !== $('fgNew2').value) { $('fgErr').textContent = '⚠️ Naya password dono jagah same nahi hai'; return; }
+    try {
+      checkStrength(pw);
+      let dek = null;
+      const rec = store.get(DEK_REC, null);
+      if (rec) dek = await unwrapDEK(await recoveryKEK(), rec);
+      await setNewPassword(pw, dek);
+      OTP.ok = false;
+      $('modalForgot').classList.add('hidden');
+      await login(adminCfg().name, pw);
+      show('scrPatients');
+      toast('✅ Naya password set ho gaya, aap login hain');
+    } catch (e) { $('fgErr').textContent = '⚠️ ' + (e.message || e); }
   }
 
   function onLoginChange() {
@@ -321,6 +442,12 @@ const Admin = (() => {
       } catch (err) { $('lgErr').textContent = '⚠️ ' + err.message; }
       finally { $('btnLgGo').disabled = false; }
     };
+    $('lnkForgot').onclick = (e) => { e.preventDefault(); openForgot(); };
+    $('btnFgSend').onclick = sendOtp;
+    $('btnFgVerify').onclick = verifyOtp;
+    $('btnFgResend').onclick = () => fgStep(1);
+    $('btnFgSave').onclick = resetPassword;
+    $('btnFgCancel').onclick = () => { OTP.ok = false; $('modalForgot').classList.add('hidden'); };
     $('btnAdminPw').onclick = () => { $('pwOld').value = ''; $('pwNew').value = ''; $('pwNew2').value = ''; $('pwErr').textContent = ''; $('modalPw').classList.remove('hidden'); };
     $('btnPwCancel').onclick = () => $('modalPw').classList.add('hidden');
     $('formPw').onsubmit = async (e) => {
@@ -358,7 +485,7 @@ const Admin = (() => {
     init() { bind(); onLoginChange(); },
     isIn, onSessionFinished, renderList,
     back() {
-      for (const m of ['modalLogin', 'modalPatient', 'modalAttach', 'modalPw']) if (!$(m).classList.contains('hidden')) { $(m).classList.add('hidden'); return true; }
+      for (const m of ['modalLogin', 'modalForgot', 'modalPatient', 'modalAttach', 'modalPw']) if (!$(m).classList.contains('hidden')) { $(m).classList.add('hidden'); return true; }
       const c = current();
       if (c === 'scrPatient') { renderList(); show('scrPatients'); return true; }
       if (c === 'scrPatients') { show('scrHome'); return true; }

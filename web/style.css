@@ -325,3 +325,5 @@ textarea:focus{border-color:var(--g3)}
 .attachList button{display:flex;flex-direction:column;gap:2px;text-align:left;border:1.5px solid var(--line);background:var(--bg);border-radius:14px;padding:12px;cursor:pointer}
 .attachList small{color:var(--muted)}
 .small{font-size:13px}
+
+.otpInput{letter-spacing:10px;text-align:center;font-size:22px!important;font-weight:700}

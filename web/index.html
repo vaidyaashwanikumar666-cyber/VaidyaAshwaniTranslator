@@ -338,8 +338,36 @@
       </label>
       <p id="lgErr" class="err"></p>
       <button id="btnLgGo" type="submit" class="btn primary block">Login</button>
+      <p class="center small"><a href="#" id="lnkForgot">🔑 Password bhool gaye?</a></p>
       <button id="btnLgCancel" type="button" class="btn text block">Band karein</button>
     </form>
+  </div>
+
+  <div id="modalForgot" class="modal hidden">
+    <div class="modalBox left">
+      <div class="okIcon">🔑</div>
+      <h2 class="center">Password bhool gaye</h2>
+      <div id="fgStep1">
+        <p class="muted small center">Admin ka registered mobile number daalein. OTP sirf usi number par jayega.</p>
+        <label class="field"><span>Registered mobile number</span><input id="fgPhone" type="tel" inputmode="tel" placeholder="+91 XXXXXXXXXX" autocomplete="off"></label>
+        <button id="btnFgSend" type="button" class="btn primary block">📩 OTP bhejein</button>
+      </div>
+      <div id="fgStep2" class="hidden">
+        <p class="muted small center">OTP bheja gaya: <b id="fgSentTo"></b></p>
+        <label class="field"><span>6 ankon ka OTP</span><input id="fgOtp" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="● ● ● ● ● ●" class="otpInput"></label>
+        <button id="btnFgVerify" type="button" class="btn primary block">✅ Verify karein</button>
+        <button id="btnFgResend" type="button" class="btn text block">OTP nahi aaya? Dobara bhejein</button>
+      </div>
+      <div id="fgStep3" class="hidden">
+        <p class="muted small center">✅ Number verify ho gaya. Ab naya password banayein.</p>
+        <label class="field"><span>Naya password (8+ akshar, letter + number)</span><input id="fgNew" type="password" autocomplete="new-password"></label>
+        <label class="field"><span>Naya password dobara</span><input id="fgNew2" type="password" autocomplete="new-password"></label>
+        <button id="btnFgSave" type="button" class="btn primary block">💾 Password badlein</button>
+      </div>
+      <p id="fgErr" class="err"></p>
+      <div id="recaptchaBox"></div>
+      <button id="btnFgCancel" type="button" class="btn text block">Band karein</button>
+    </div>
   </div>
 
   <div id="modalPw" class="modal hidden">
@@ -385,6 +413,7 @@
 <script src="lib/peerjs.min.js"></script>
 <script src="languages.js"></script>
 <script src="app.js"></script>
+<script src="firebase-config.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

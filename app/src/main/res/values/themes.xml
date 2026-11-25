@@ -1,7 +1,7 @@
 <resources>
     <color name="brand_dark">#063D27</color>
     <color name="brand">#0B6B43</color>
-    <color name="launcher_bg">#0B6B43</color>
+    <color name="launcher_bg">#EBF6EE</color>
 
     <style name="Theme.Vaidya" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="colorPrimary">@color/brand</item>
