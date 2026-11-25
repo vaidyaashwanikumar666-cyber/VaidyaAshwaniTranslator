@@ -51,6 +51,31 @@
     </div>
   </section>
 
+
+  <!-- ============ GUEST (link se, bina install) ============ -->
+  <section id="scrGuest" class="screen hidden">
+    <div class="hero">
+      <div class="pulseRing"><div class="avatar" id="gAvatar">?</div></div>
+      <h1><span id="gHost">—</span><br><span>aapse baat karna chahte hain</span></h1>
+      <p>Kuch install nahi karna. Apni bhasha chunein aur judein – aap apni bhasha me bolenge, wo apni bhasha me sunenge.</p>
+    </div>
+    <div class="sheetCard">
+      <label class="field"><span>Aapka naam</span>
+        <input id="gName" type="text" placeholder="Apna naam likhein" autocomplete="name">
+      </label>
+      <div class="field"><span>Aapki bhasha (aap isi me bolenge aur sunenge)</span>
+        <button type="button" class="langBtn" data-target="gLang"><b>English</b><i>▾</i></button>
+        <input type="hidden" id="gLang" value="en-IN">
+      </div>
+      <div class="bigActions">
+        <button id="btnGVideo" class="action video"><span class="ico">🎥</span><b>Video se judein</b><small>Translated</small></button>
+        <button id="btnGVoice" class="action voice"><span class="ico">📞</span><b>Voice se judein</b><small>Translated</small></button>
+      </div>
+      <p class="tiny muted center">Unki bhasha: <b id="gHostLang">—</b> · Mic ki permission maangne par <b>Allow</b> karein</p>
+      <p class="tiny muted center"><a href="privacy.html" target="_blank">Privacy Policy</a> · Vaidya Ashwani Live Call Translator</p>
+    </div>
+  </section>
+
   <!-- ============ HOME TAB ============ -->
   <section id="scrHome" class="screen hidden withNav">
     <div class="homeHead">
@@ -84,7 +109,11 @@
           <button id="btnVideoCall" class="action video"><span class="ico">🎥</span><b>Video Call</b><small>Translated</small></button>
           <button id="btnAudioCall" class="action voice"><span class="ico">📞</span><b>Voice Call</b><small>Translated</small></button>
         </div>
-        <p class="tiny muted">Saamne wale ke phone me bhi ye app hona chahiye. <a href="#" id="lnkInvite">Unhe invite bhejein →</a></p>
+        <button id="btnSendLink" class="linkTile">
+          <span class="ico">🔗</span>
+          <span class="txt"><b>Saamne wale ke paas app nahi hai?</b><small>Unhe link bhejein – browser me khulega, kuch install nahi karna</small></span>
+          <span class="arrow">›</span>
+        </button>
       </div>
 
       <h3 class="secTitle">WhatsApp / SIM Call ke liye</h3>

@@ -18,6 +18,10 @@ const APK_URL = `https://github.com/${GH_OWNER}/${GH_REPO}/releases/latest/downl
 const $ = (id) => document.getElementById(id);
 const NB = window.AndroidBridge || null;          // native Android bridge (app ke andar)
 
+// Link se judne wala (bina install): index.html?call=<host number>&n=<host name>&l=<host lang>
+const URLP = new URLSearchParams(location.search);
+const GUEST = (!NB && URLP.get('call')) ? { host: URLP.get('call').replace(/[^\d]/g, ''), hostName: URLP.get('n') || '', hostLang: URLP.get('l') || '' } : null;
+
 /* ------------------------- Storage helpers ------------------------- */
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
@@ -67,14 +71,15 @@ function toast(msg, ms = 3200) {
 }
 const TABS = ['scrHome', 'scrHistory', 'scrSettings'];
 function show(scr) {
-  ['scrSetup', 'scrHome', 'scrHistory', 'scrSettings', 'scrCall', 'scrSpeaker'].forEach(s => $(s).classList.toggle('hidden', s !== scr));
+  ['scrSetup', 'scrGuest', 'scrHome', 'scrHistory', 'scrSettings', 'scrCall', 'scrSpeaker'].forEach(s => $(s).classList.toggle('hidden', s !== scr));
   const isTab = TABS.includes(scr);
   $('bottomNav').classList.toggle('hidden', !isTab);
   if (isTab) { S.tab = scr; document.querySelectorAll('#bottomNav button').forEach(b => b.classList.toggle('on', b.dataset.tab === scr)); }
   if (scr === 'scrHistory') renderHistory();
   window.scrollTo(0, 0);
 }
-function current() { return ['scrSetup', 'scrHome', 'scrHistory', 'scrSettings', 'scrCall', 'scrSpeaker'].find(s => !$(s).classList.contains('hidden')); }
+function homeScreen() { return S.guest ? 'scrGuest' : 'scrHome'; }
+function current() { return ['scrSetup', 'scrGuest', 'scrHome', 'scrHistory', 'scrSettings', 'scrCall', 'scrSpeaker'].find(s => !$(s).classList.contains('hidden')); }
 function langName(id) { const l = LANG_BY_ID[id]; return l ? l.n : (id || '—'); }
 function shortLang(id) { return langName(id).split(' – ')[0]; }
 function digits(num) { return String(num || '').replace(/[^\d]/g, ''); }
@@ -334,7 +339,7 @@ function startPeer() {
     const m = srv.replace(/^https?:\/\//, '').match(/^([^:/]+)(?::(\d+))?(\/.*)?$/);
     if (m) Object.assign(opts, { host: m[1], port: +(m[2] || 443), path: m[3] || '/', secure: !/^(localhost|127\.)/.test(m[1]) });
   }
-  const peer = new Peer(peerIdFor(S.profile.number), opts);
+  const peer = new Peer(S.guest ? ID_PREFIX + 'g-' + S.guestId : peerIdFor(S.profile.number), opts);
   S.peer = peer;
   setNet(false, 'Connecting…');
   peer.on('open', () => setNet(true));
@@ -355,10 +360,10 @@ function startPeer() {
     if (S.call) { call.close(); return; }
     S.pendingCall = call;
     const m = call.metadata || {};
-    const num = digits(call.peer.replace(ID_PREFIX, ''));
-    $('inName').textContent = m.name || ('+' + num);
+    const num = m.number || '';
+    $('inName').textContent = m.name || (num ? '+' + num : 'Guest');
     $('inAvatar').textContent = (m.name || '?').trim().charAt(0).toUpperCase();
-    $('inInfo').textContent = `${m.video ? '🎥 Video' : '📞 Voice'} call · ${shortLang(m.lang)} · +${num}`;
+    $('inInfo').textContent = `${m.video ? '🎥 Video' : '📞 Voice'} call · ${shortLang(m.lang)} · ${num ? '+' + num : '🔗 Link se (bina app)'}`;
     $('modalIncoming').classList.remove('hidden');
     ringtone(true);
     try { NB && NB.notifyIncoming(m.name || ('+' + num)); } catch (e) { }
@@ -400,8 +405,8 @@ async function startCall(video) {
   const num = $('callNumber').value.trim();
   if (normNumber(num).length < 8) { toast('Sahi number daalein (country code ke saath)'); $('callNumber').focus(); return; }
   if (!S.peer || S.peer.disconnected || S.peer.destroyed) { toast('Abhi server se jud raha hai… 2 second baad dobara dabayein'); startPeer(); return; }
-  if (normNumber(num) === normNumber(S.profile.number)) { toast('Apne hi number par call nahi kar sakte 🙂'); return; }
-  saveContact(num);
+  if (!S.guest && normNumber(num) === normNumber(S.profile.number)) { toast('Apne hi number par call nahi kar sakte 🙂'); return; }
+  if (!S.guest) saveContact(num);
   try { S.localStream = await getMedia(video); }
   catch (e) { toast('🎙️ Mic/Camera ki permission chahiye'); return; }
   S.video = video && S.localStream.getVideoTracks().length > 0;
@@ -411,7 +416,7 @@ async function startCall(video) {
   enterCallUI();
   $('remoteName').textContent = 'Ringing…';
   $('remoteLang').textContent = '+' + normNumber(num);
-  const meta = { name: S.profile.name, number: normNumber(S.profile.number), lang: S.profile.lang, video: S.video };
+  const meta = { name: S.profile.name, number: S.guest ? '' : normNumber(S.profile.number), lang: S.profile.lang, video: S.video, guest: !!S.guest };
   setupConn(S.peer.connect(rid, { metadata: meta, reliable: true, serialization: 'json' }));
   const call = S.peer.call(rid, S.localStream, { metadata: meta });
   if (!call) { toast('Call shuru nahi ho payi'); endCall(false); return; }
@@ -428,7 +433,7 @@ async function acceptCall() {
   try { S.localStream = await getMedia(!!m.video); }
   catch (e) { toast('🎙️ Mic/Camera ki permission chahiye'); call.close(); return; }
   S.video = !!m.video && S.localStream.getVideoTracks().length > 0;
-  S.remote = { number: m.number || digits(call.peer.replace(ID_PREFIX, '')), name: m.name || '', lang: m.lang || null };
+  S.remote = { number: m.number || '', name: m.name || '', lang: m.lang || null };
   beginSession('call');
   enterCallUI();
   updateRemoteUI();
@@ -564,7 +569,7 @@ async function endCall(notify = true) {
   if (S.localStream) S.localStream.getTracks().forEach(t => t.stop());
   S.localStream = null; S.remoteStream = null;
   $('remoteVideo').srcObject = null; $('localVideo').srcObject = null; $('remoteAudio').srcObject = null;
-  show('scrHome');
+  show(homeScreen());
   await finishSession(audio);
   S.ending = false;
 }
@@ -801,7 +806,7 @@ async function closeSpeakerMode() {
   Recog.stop(); TTS.stop(); spkMark(null);
   const audio = await stopRecording();
   if (Spk.stream) { Spk.stream.getTracks().forEach(t => t.stop()); Spk.stream = null; }
-  show('scrHome');
+  show(homeScreen());
   await finishSession(audio);
 }
 
@@ -845,6 +850,23 @@ function openExternal(url) {
   if (NB) { try { NB.openExternal(url); return; } catch (e) { } }
   if (url.startsWith('tel:')) location.href = url; else window.open(url, '_blank');
 }
+function guestLink() {
+  const u = new URL(WEB_URL);
+  u.searchParams.set('call', normNumber(S.profile.number));
+  u.searchParams.set('n', S.profile.name || '');
+  u.searchParams.set('l', S.profile.lang);
+  return u.toString();
+}
+function linkText() {
+  return `Namaste! Main ${S.profile?.name || ''} hoon. Aap apni bhasha me mujhse baat kar sakte hain – main aapki baat apni bhasha me sununga.\n\n👉 Ye link kholein (kuch install nahi karna):\n${guestLink()}\n\nLink kholkar apni bhasha chunein aur "Judein" dabayein.`;
+}
+function sendGuestLink() {
+  const n = normNumber($('callNumber').value);
+  const text = linkText();
+  if (n.length >= 10) openExternal('https://wa.me/' + n + '?text=' + encodeURIComponent(text));
+  else shareText(text);
+  toast('🔗 Link bhej diya. Jab wo link kholkar judenge, aapko call aayegi – app khula rakhein.', 6000);
+}
 function inviteText() {
   return `Namaste! Main ${S.profile?.name || ''} hoon. Hum dono apni-apni bhasha me baat kar sakein, iske liye "${APP_NAME}" app install karein:\n📲 Android app: ${APK_URL}\n🌐 Ya browser me kholein: ${WEB_URL}\nMujhe is number par call karein: +${normNumber(S.profile?.number)}`;
 }
@@ -858,6 +880,7 @@ window.appBack = function () {
   if (c === 'scrCall') { if (confirm('Call band karein?')) endCall(true); return 'handled'; }
   if (c === 'scrSpeaker') { closeSpeakerMode(); return 'handled'; }
   if (c === 'scrHistory' || c === 'scrSettings') { show('scrHome'); return 'handled'; }
+  if (c === 'scrGuest') return 'exit';
   if (c === 'scrSetup' && S.profile) { show('scrSettings'); return 'handled'; }
   return 'exit';
 };
@@ -883,7 +906,9 @@ function bind() {
   $('btnVideoCall').onclick = () => startCall(true);
   $('btnAudioCall').onclick = () => startCall(false);
   $('btnContacts').onclick = () => { const c = store.get('vat_contacts', []); if (!c.length) return toast('Abhi koi recent number nahi'); $('callNumber').value = c[0]; toast('Last number: ' + c[0]); };
-  $('lnkInvite').onclick = (e) => { e.preventDefault(); shareText(inviteText()); };
+  $('btnSendLink').onclick = sendGuestLink;
+  $('btnGVideo').onclick = () => joinAsGuest(true);
+  $('btnGVoice').onclick = () => joinAsGuest(false);
   $('btnShareApp').onclick = () => shareText(inviteText());
   $('btnAccept').onclick = acceptCall;
   $('btnReject').onclick = rejectCall;
@@ -956,6 +981,42 @@ function bind() {
   window.addEventListener('beforeunload', (e) => { if (S.session) { e.preventDefault(); e.returnValue = ''; } });
 }
 
+/* ------------------------- Guest (link se, bina install) ------------------------- */
+function guessLang() {
+  const saved = store.get('vat_guest_lang', null);
+  if (saved && LANG_BY_ID[saved]) return saved;
+  for (const nl of (navigator.languages || [navigator.language || ''])) {
+    if (LANG_BY_ID[nl]) return nl;
+    const base = String(nl).split('-')[0];
+    const hit = Object.values(LANG_BY_ID).find(l => l.t === base);
+    if (hit) return hit.s;
+  }
+  return 'en-IN';
+}
+function initGuest() {
+  S.guest = true;
+  try { S.guestId = sessionStorage.getItem('vat_gid') || Math.random().toString(36).slice(2, 10); sessionStorage.setItem('vat_gid', S.guestId); }
+  catch (e) { S.guestId = Math.random().toString(36).slice(2, 10); }
+  S.profile = { name: store.get('vat_guest_name', ''), number: '', lang: guessLang() };
+  const hn = GUEST.hostName || ('+' + GUEST.host);
+  $('gHost').textContent = hn;
+  $('gAvatar').textContent = hn.replace('+', '').trim().charAt(0).toUpperCase() || '?';
+  $('gHostLang').textContent = GUEST.hostLang ? shortLang(GUEST.hostLang) : '—';
+  $('gName').value = S.profile.name;
+  setLangValue('gLang', S.profile.lang);
+  show('scrGuest');
+  startPeer();
+}
+function joinAsGuest(video) {
+  S.profile.name = $('gName').value.trim() || 'Guest';
+  S.profile.lang = $('gLang').value;
+  store.set('vat_guest_name', $('gName').value.trim());
+  store.set('vat_guest_lang', S.profile.lang);
+  $('callNumber').value = GUEST.host;
+  if (!Recog.available()) toast('ℹ️ Is browser me bolkar translation nahi hoga – Chrome use karein, ya call me likh kar bhejein.', 6000);
+  startCall(video);
+}
+
 /* ------------------------- Init ------------------------- */
 function init() {
   // hidden input for quick language change from home
@@ -965,6 +1026,7 @@ function init() {
   setLangValue('spkOtherLang', store.get('vat_spk_other', 'en-US'));
   q.value = S.profile?.lang || 'hi-IN';
   try { if (NB) $('appVer').textContent = NB.appVersion(); } catch (e) { }
+  if (GUEST) { initGuest(); setTimeout(() => $('splash').classList.add('gone'), 900); return; }
   if (!NB && /Android/i.test(navigator.userAgent)) { $('apkBanner').href = APK_URL; $('apkBanner').classList.remove('hidden'); }
   if (!S.profile) show('scrSetup');
   else { applyProfile(); show('scrHome'); startPeer(); }

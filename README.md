@@ -3,6 +3,7 @@
 Aap Hindi me boliye, saamne wala apni bhasha me sunega. Wo apni bhasha me bolega, aap Hindi me sunenge.
 
 - 🎥 **Video Call** aur 📞 **Voice Call**, live translation ke saath (aapka mobile number hi aapki Call ID hai)
+- 🔗 **Bina install ke call**: saamne wale ko sirf ek link bhejein. Wo browser me kholkar apni bhasha chunenge aur call jud jayegi. App sirf aapke phone me hona chahiye.
 - 🔊 **Speaker Translator**: WhatsApp ya SIM call ko speaker par daalkar translation
 - 📄 Har call ki **PDF** aur 🎧 **voice recording**
 - 🇮🇳 8vi Anusuchi ki **sabhi 22 bhashayein**, saath me Bhojpuri, Awadhi, Marwadi, Tulu, Mizo, Khasi aur Chhattisgarhi
@@ -31,6 +32,6 @@ Translation ke liye Google ki free translation service use hoti hai. Calls do ph
 
 ## ⚠️ Zaroori baatein
 - WhatsApp aur SIM call ki awaaz ko koi bhi app seedha badal nahi sakti, kyunki Android/iOS ise allow nahi karte. Isliye uske liye **Speaker Translator** mode hai.
-- Is app ki apni call me translation tab hota hai jab dono phones me ye app ho.
+- Saamne wale ke paas app na ho to Home par **"Saamne wale ke paas app nahi hai?"** dabakar link bhejein. Unke phone ke Chrome ya Safari me hi call aur translation ho jayega. Firefox jaise kuch browsers me bol kar translation nahi hota, wahan wo likh kar bhej sakte hain.
 - App band (swipe-away) ho to call nahi aayegi. Saamne wale ka app khula ya background me hona chahiye.
 - Kuch phones par video call ke dauran mic ek saath call aur awaaz-pehchaan dono ko nahi milta. Aisa ho to **earphone** lagayein, ya likh kar bhejein (call screen par type box hai).
