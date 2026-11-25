@@ -38,7 +38,7 @@ button{font-family:inherit;color:inherit}
 .content{padding:0 16px}
 .field{display:block;margin:14px 0 0}
 .field>span{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
-input[type=text],input[type=tel],input[type=search]{width:100%;padding:14px 14px;border-radius:14px;border:1.5px solid var(--line);
+input[type=text],input[type=tel],input[type=search],input[type=password]{width:100%;padding:14px 14px;border-radius:14px;border:1.5px solid var(--line);
   background:var(--bg);color:var(--text);font-size:16px;outline:none;transition:border-color .15s}
 input:focus{border-color:var(--g3)}
 input[type=range]{width:100%;accent-color:var(--g3)}
@@ -280,3 +280,48 @@ input[type=range]{width:100%;accent-color:var(--g3)}
 .permBox p{margin:0;color:var(--muted)} .permBox p b{color:var(--text)}
 .permBox small{display:block;margin-top:6px;color:var(--muted)}
 .recNotice{display:inline-block;margin-top:8px;background:rgba(229,56,59,.85);color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:99px}
+
+/* ---------- Admin / Patients ---------- */
+.bottomNav.four button span{padding:2px 12px}
+.err{color:var(--danger);font-size:13px;min-height:18px;margin:8px 0 0}
+.modalBox.left{text-align:left}
+.scrollBox{max-height:88vh;overflow-y:auto}
+textarea{width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:var(--text);font-size:16px;font-family:inherit;resize:vertical;outline:none}
+textarea:focus{border-color:var(--g3)}
+.patTools{display:flex;gap:8px;margin-bottom:12px}
+.patTools input{flex:1}
+.patTools .btn{min-height:50px;padding:0 16px;white-space:nowrap}
+.patList{display:flex;flex-direction:column;gap:10px}
+.patCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--card);border-radius:18px;padding:14px;box-shadow:var(--shadow);cursor:pointer}
+.patAv{width:46px;height:46px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,var(--g2),var(--g3));color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}
+.patAv.big{width:60px;height:60px;font-size:26px;background:#fff;color:var(--g2)}
+.patInfo{flex:1;display:flex;flex-direction:column;min-width:0}
+.patInfo b{font-size:16px}
+.patInfo small{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.patRec{font-size:13px;font-weight:700;color:var(--g2)}
+.patHead{display:flex;align-items:center;gap:12px}
+.patHead h2{font-size:20px}
+.backBtn.light{background:rgba(255,255,255,.18);color:#fff;box-shadow:none}
+.patActs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.patActs button{border:0;border-radius:16px;padding:12px 4px;background:var(--card);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:700;cursor:pointer}
+.patActs button span{font-size:22px}
+.patInfoBox div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.patInfoBox div:last-child{border:0}
+.patInfoBox span{color:var(--muted);flex-shrink:0}
+.patInfoBox b{text-align:right;word-break:break-word}
+.row2{display:flex;gap:8px;margin-bottom:4px}
+.row2 .btn{flex:1;min-height:46px;font-size:14px;padding:10px}
+.row2 .btn.danger{flex:0 0 56px;color:var(--danger)}
+.recList{display:flex;flex-direction:column;gap:10px}
+.recItem{background:var(--card);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow)}
+.recTop{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.recTop span{font-size:22px}
+.recTop div{display:flex;flex-direction:column}
+.recTop small{color:var(--muted);font-size:12px}
+.recItem audio{width:100%;height:40px}
+.recItem .acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.recItem .acts button{border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.attachList{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.attachList button{display:flex;flex-direction:column;gap:2px;text-align:left;border:1.5px solid var(--line);background:var(--bg);border-radius:14px;padding:12px;cursor:pointer}
+.attachList small{color:var(--muted)}
+.small{font-size:13px}

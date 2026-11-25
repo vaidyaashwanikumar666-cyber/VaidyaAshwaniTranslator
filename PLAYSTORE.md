@@ -36,7 +36,7 @@ https://play.google.com/console → **Personal** account → $25 (ek baar) → A
 | Data safety | Niche Step 4 |
 | Government app | No |
 | Financial features | My app doesn't provide any financial features |
-| Health apps | My app does not have any health features |
+| Health apps | **Patient records** wala option chunein (jaise "Medical: Patient / clinical record management"). App doctor ko patient ka record aur call recordings phone par rakhne deta hai. Ye diagnosis ya ilaaj nahi karta. Agar form me koi option theek na baithe, to "Other" chunkar yahi baat likhein. |
 | **Foreground service permissions** | Niche Step 5 |
 
 ## Step 4 – Data safety
@@ -53,6 +53,8 @@ https://play.google.com/console → **Personal** account → $25 (ek baar) → A
 | Messages → **Other in-app messages** | Collected + **Shared** | Yes | Required | App functionality (text translation ke liye Google Translate ko jaata hai) |
 
 Baaki sab data types: **Not collected**.
+
+> Patient records (naam, mobile, pata, notes) sirf Admin ke phone me encrypted rehte hain aur kabhi upload nahi hote. Isliye Play ki definition me ye "collected" nahi hain. Privacy Policy me inka zikr pehle se hai.
 
 ## Step 5 – Foreground service declaration
 App call ke dauran **microphone** aur **camera** foreground service chalata hai, taaki screen lock hone par bhi call na kate. Play Console isse poochega:

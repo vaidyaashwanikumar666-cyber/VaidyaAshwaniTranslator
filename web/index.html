@@ -152,12 +152,55 @@
     </div>
   </section>
 
+
+  <!-- ============ PATIENTS (sirf Admin) ============ -->
+  <section id="scrPatients" class="screen hidden withNav">
+    <div class="pageHead"><h2>🩺 Patients</h2><p><span id="patCount">0 patients</span> · sirf Admin ke liye</p></div>
+    <div class="content">
+      <div class="patTools">
+        <input id="patSearch" type="search" placeholder="🔍 Naam, number ya pata dhoondhein">
+        <button id="btnPatNew" class="btn primary">➕ Naya</button>
+      </div>
+      <div id="patList" class="patList"></div>
+    </div>
+  </section>
+
+  <section id="scrPatient" class="screen hidden">
+    <div class="pageHead patHead">
+      <button id="btnPdBack" class="backBtn light">‹</button>
+      <div class="patAv big" id="pdAvatar">?</div>
+      <div><h2 id="pdName">—</h2><p id="pdMobile">—</p></div>
+    </div>
+    <div class="content">
+      <div class="patActs">
+        <button id="btnPdVoice"><span>📞</span>Voice</button>
+        <button id="btnPdVideo"><span>🎥</span>Video</button>
+        <button id="btnPdLink"><span>🔗</span>Link</button>
+        <button id="btnPdSpk"><span>🔊</span>Speaker</button>
+      </div>
+      <div class="setGroup pad patInfoBox" id="pdInfo"></div>
+      <div class="row2">
+        <button id="btnPdEdit" class="btn ghost">✏️ Badlein</button>
+        <button id="btnPdReport" class="btn ghost">📄 Report PDF</button>
+        <button id="btnPdDel" class="btn ghost danger">🗑️</button>
+      </div>
+      <h3 class="secTitle">🎧 Call Recordings <span id="pdRecCount"></span></h3>
+      <div id="pdRecs" class="recList"></div>
+      <button id="btnPdAttach" class="btn ghost block">➕ Purani call is patient se jodein</button>
+      <div style="height:24px"></div>
+    </div>
+  </section>
+
   <!-- ============ SETTINGS TAB ============ -->
   <section id="scrSettings" class="screen hidden withNav">
     <div class="pageHead"><h2>⚙️ Settings</h2><p>Apne hisaab se app set karein</p></div>
     <div class="content">
       <div class="setGroup">
         <button id="btnEditProfile" class="setRow"><span>👤 Profile (naam, number, bhasha)</span><i>›</i></button>
+      </div>
+      <div class="setGroup">
+        <button id="btnAdmin" class="setRow"><span>🔐 Admin Login</span><i>›</i></button>
+        <button id="btnAdminPw" class="setRow hidden"><span>🔑 Admin password badlein</span><i>›</i></button>
       </div>
       <div class="setGroup">
         <label class="setRow"><span>🔊 Translation bol kar sunayein</span><input type="checkbox" id="optTTS" class="switch" checked></label>
@@ -191,6 +234,7 @@
   <nav id="bottomNav" class="bottomNav hidden">
     <button data-tab="scrHome" class="on"><span>🏠</span>Home</button>
     <button data-tab="scrHistory"><span>🗂️</span>History</button>
+    <button data-tab="scrPatients" id="navPatients" class="hidden"><span>🩺</span>Patients</button>
     <button data-tab="scrSettings"><span>⚙️</span>Settings</button>
   </nav>
 
@@ -283,6 +327,55 @@
     </div>
   </div>
 
+
+  <div id="modalLogin" class="modal hidden">
+    <form id="formLogin" class="modalBox left" autocomplete="off">
+      <div class="okIcon">🔐</div>
+      <h2 class="center">Admin Login</h2>
+      <label class="field"><span>Admin name</span><input id="lgName" type="text" autocomplete="username" placeholder="Admin ka naam"></label>
+      <label class="field"><span>Password</span>
+        <div class="dialRow"><input id="lgPass" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" id="btnLgShow" class="iconBtn">👁️</button></div>
+      </label>
+      <p id="lgErr" class="err"></p>
+      <button id="btnLgGo" type="submit" class="btn primary block">Login</button>
+      <button id="btnLgCancel" type="button" class="btn text block">Band karein</button>
+    </form>
+  </div>
+
+  <div id="modalPw" class="modal hidden">
+    <form id="formPw" class="modalBox left" autocomplete="off">
+      <h2 class="center">🔑 Admin password badlein</h2>
+      <label class="field"><span>Purana password</span><input id="pwOld" type="password" autocomplete="current-password"></label>
+      <label class="field"><span>Naya password (8+ akshar, letter + number)</span><input id="pwNew" type="password" autocomplete="new-password"></label>
+      <label class="field"><span>Naya password dobara</span><input id="pwNew2" type="password" autocomplete="new-password"></label>
+      <p id="pwErr" class="err"></p>
+      <button type="submit" class="btn primary block">Badlein</button>
+      <button id="btnPwCancel" type="button" class="btn text block">Band karein</button>
+    </form>
+  </div>
+
+  <div id="modalPatient" class="modal hidden">
+    <form id="formPatient" class="modalBox left scrollBox" autocomplete="off">
+      <h2 id="pfTitle" class="center">➕ Naya Patient</h2>
+      <label class="field"><span>Patient ka naam *</span><input id="pfName" type="text" placeholder="Poora naam"></label>
+      <label class="field"><span>Mobile number *</span><input id="pfMobile" type="tel" inputmode="tel" placeholder="+91 9XXXXXXXXX"></label>
+      <label class="field"><span>Pata (Address)</span><textarea id="pfAddress" rows="2" placeholder="Gaon / shahar, zila, rajya"></textarea></label>
+      <label class="field"><span>Kisne assign kiya</span><input id="pfAssigned" type="text" list="assignedList" placeholder="Doctor / staff ka naam"><datalist id="assignedList"></datalist></label>
+      <label class="field"><span>Notes (optional)</span><textarea id="pfNotes" rows="2" placeholder="Bimari, dawai, follow-up…"></textarea></label>
+      <button type="submit" class="btn primary block">💾 Save karein</button>
+      <button id="btnPfCancel" type="button" class="btn text block">Band karein</button>
+    </form>
+  </div>
+
+  <div id="modalAttach" class="modal hidden">
+    <div class="modalBox left scrollBox">
+      <h2 class="center">➕ Call jodein</h2>
+      <p class="muted small center">History ki wo calls jo abhi kisi patient se judi nahi hain</p>
+      <div id="attachList" class="attachList"></div>
+      <button id="btnAttachClose" type="button" class="btn text block">Band karein</button>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
   <audio id="remoteAudio" autoplay></audio>
 </div>
@@ -290,8 +383,8 @@
 <div id="pdfHolder" style="position:fixed;left:-10000px;top:0;"></div>
 
 <script src="lib/peerjs.min.js"></script>
-<script src="lib/html2pdf.bundle.min.js"></script>
 <script src="languages.js"></script>
 <script src="app.js"></script>
+<script src="admin.js"></script>
 </body>
 </html>

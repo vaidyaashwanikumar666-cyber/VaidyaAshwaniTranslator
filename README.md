@@ -6,6 +6,7 @@ Aap Hindi me boliye, saamne wala apni bhasha me sunega. Wo apni bhasha me bolega
 - 🔗 **Bina install ke call**: saamne wale ko sirf ek link bhejein. Wo browser me kholkar apni bhasha chunenge aur call jud jayegi. App sirf aapke phone me hona chahiye.
 - 🔊 **Speaker Translator**: WhatsApp ya SIM call ko speaker par daalkar translation
 - 📄 Har call ki **PDF** aur 🎧 **voice recording**
+- 🩺 **Patients (sirf Admin)**: patient ka naam, mobile, pata, kisne assign kiya aur notes. Uske number se hui saari call recordings apne aap jud jaati hain. Patient Report PDF bhi banti hai. Ye section Settings → **Admin Login** ke baad hi dikhta hai, aur data phone me encrypted rehta hai.
 - 🇮🇳 8vi Anusuchi ki **sabhi 22 bhashayein**, saath me Bhojpuri, Awadhi, Marwadi, Tulu, Mizo, Khasi aur Chhattisgarhi
 - 🌍 Duniya ki **120 se zyada** bhashayein
 
