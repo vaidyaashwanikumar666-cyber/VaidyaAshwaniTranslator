@@ -15,6 +15,12 @@ const GH_OWNER = 'vaidyaashwanikumar666-cyber';
 const GH_REPO = 'VaidyaAshwaniTranslator';
 const WEB_URL = `https://${GH_OWNER}.github.io/${GH_REPO}/`;
 const APK_URL = `https://github.com/${GH_OWNER}/${GH_REPO}/releases/latest/download/VaidyaAshwaniTranslator.apk`;
+// Play Store: app live hone ke baad PLAY_LIVE = true karein
+const PLAY_ID = 'in.vaidyaashwani.livecalltranslator';
+const PLAY_URL = `https://play.google.com/store/apps/details?id=${PLAY_ID}`;
+const PLAY_LIVE = false;
+const APP_DL = PLAY_LIVE ? PLAY_URL : APK_URL;
+const SUPPORT_EMAIL = '';   // Play Store listing wala support email yahan daalein
 const $ = (id) => document.getElementById(id);
 const NB = window.AndroidBridge || null;          // native Android bridge (app ke andar)
 
@@ -475,7 +481,7 @@ function setupCall(call) {
 function setupConn(conn) {
   if (S.conn === conn) return;
   S.conn = conn; S.pendingConn = null;
-  const hello = () => conn.send({ type: 'hello', name: S.profile.name, number: normNumber(S.profile.number), lang: S.profile.lang });
+  const hello = () => conn.send({ type: 'hello', name: S.profile.name, number: S.guest ? '' : normNumber(S.profile.number), lang: S.profile.lang, rec: !!S.settings.record });
   if (conn.open) hello(); else conn.on('open', hello);
   conn.on('data', onData);
   conn.on('close', () => { if (S.session && S.session.type === 'call') endCall(false); });
@@ -488,6 +494,7 @@ async function onData(msg) {
       S.remote = Object.assign(S.remote || {}, { name: msg.name, number: msg.number, lang: msg.lang });
       if (S.session) S.session.them = { ...S.remote };
       if (S.remoteStream) updateRemoteUI();
+      if (msg.rec) { $('recNotice').classList.remove('hidden'); toast('🔴 ' + (msg.name || 'Saamne wala') + ' ye call record kar rahe hain', 5000); }
       break;
     case 'interim':
       $('liveCaption').textContent = msg.text ? `${S.remote?.name || 'Saamne wala'}: ${msg.text}…` : '';
@@ -532,8 +539,9 @@ function updateRemoteUI() {
 
 function enterCallUI() {
   show('scrCall');
-  try { NB && NB.setCallMode(true); } catch (e) { }
+  try { NB && NB.setCallMode(true, !!S.video); } catch (e) { }
   $('callTranscript').innerHTML = ''; $('liveCaption').textContent = '';
+  $('recNotice').classList.add('hidden');
   $('localVideo').srcObject = S.localStream;
   $('localVideo').classList.toggle('hidden', !S.video);
   $('btnCam').classList.toggle('hidden', !S.video);
@@ -561,7 +569,7 @@ async function endCall(notify = true) {
   if (notify && S.conn && S.conn.open) { try { S.conn.send({ type: 'bye' }); } catch (e) { } }
   Recog.stop(); TTS.stop();
   clearInterval(S.timerInt);
-  try { NB && NB.setCallMode(false); } catch (e) { }
+  try { NB && NB.setCallMode(false, false); } catch (e) { }
   const audio = await stopRecording();
   const c = S.call, cn = S.conn;
   S.call = null; S.conn = null;
@@ -629,6 +637,7 @@ function startRecording(streams) {
     rec.start(1000);
     S.recorder = rec; S.recMix = ctx;
     $('recDot').classList.remove('hidden');
+    toast(S.session?.type === 'call' ? '🔴 Call record ho rahi hai – saamne wale ko iski suchna di gayi hai' : '🔴 Recording chal rahi hai – saamne wale ko zaroor batayein', 4500);
   } catch (e) { console.warn('record fail', e); }
 }
 function stopRecording() {
@@ -868,7 +877,8 @@ function sendGuestLink() {
   toast('🔗 Link bhej diya. Jab wo link kholkar judenge, aapko call aayegi – app khula rakhein.', 6000);
 }
 function inviteText() {
-  return `Namaste! Main ${S.profile?.name || ''} hoon. Hum dono apni-apni bhasha me baat kar sakein, iske liye "${APP_NAME}" app install karein:\n📲 Android app: ${APK_URL}\n🌐 Ya browser me kholein: ${WEB_URL}\nMujhe is number par call karein: +${normNumber(S.profile?.number)}`;
+  const dl = NB ? (PLAY_LIVE ? `\n📲 Android app: ${PLAY_URL}` : '') : `\n📲 Android app: ${APP_DL}`;
+  return `Namaste! Main ${S.profile?.name || ''} hoon. Hum dono apni-apni bhasha me baat kar sakein, iske liye "${APP_NAME}" use karein:${dl}\n🌐 Bina install, browser me: ${guestLink()}`;
 }
 
 /* Android back button: 'handled' ya 'exit' lautata hai */
@@ -910,6 +920,8 @@ function bind() {
   $('btnGVideo').onclick = () => joinAsGuest(true);
   $('btnGVoice').onclick = () => joinAsGuest(false);
   $('btnShareApp').onclick = () => shareText(inviteText());
+  if (PLAY_LIVE) { $('btnRate').classList.remove('hidden'); $('btnRate').onclick = () => openExternal(NB ? 'market://details?id=' + PLAY_ID : PLAY_URL); }
+  if (SUPPORT_EMAIL) { $('btnSupport').classList.remove('hidden'); $('btnSupport').onclick = () => openExternal('mailto:' + SUPPORT_EMAIL + '?subject=' + encodeURIComponent(APP_NAME)); }
   $('btnAccept').onclick = acceptCall;
   $('btnReject').onclick = rejectCall;
   $('btnEnd').onclick = () => endCall(true);
@@ -1027,7 +1039,7 @@ function init() {
   q.value = S.profile?.lang || 'hi-IN';
   try { if (NB) $('appVer').textContent = NB.appVersion(); } catch (e) { }
   if (GUEST) { initGuest(); setTimeout(() => $('splash').classList.add('gone'), 900); return; }
-  if (!NB && /Android/i.test(navigator.userAgent)) { $('apkBanner').href = APK_URL; $('apkBanner').classList.remove('hidden'); }
+  if (!NB && /Android/i.test(navigator.userAgent)) { $('apkBanner').href = APP_DL; $('apkBanner').classList.remove('hidden'); }
   if (!S.profile) show('scrSetup');
   else { applyProfile(); show('scrHome'); startPeer(); }
   setTimeout(() => $('splash').classList.add('gone'), 1400);

@@ -46,6 +46,13 @@
         <button type="button" class="langBtn" data-target="setLang"><b>Hindi – हिन्दी</b><i>▾</i></button>
         <input type="hidden" id="setLang" value="hi-IN">
       </div>
+      <div class="permBox">
+        <b>App ko ye permission chahiye</b>
+        <div><span>🎙️</span><p><b>Microphone</b> – call me aapki awaaz bhejne aur use translate karne ke liye</p></div>
+        <div><span>🎥</span><p><b>Camera</b> – sirf video call ke dauran</p></div>
+        <div><span>🔔</span><p><b>Notification</b> – call chalte waqt suchna dikhane ke liye (screen lock par bhi call chale)</p></div>
+        <small>Aapki history, PDF aur recording sirf aapke phone me rehti hain.</small>
+      </div>
       <button id="btnSaveSetup" class="btn primary block">Aage badhein →</button>
       <p class="tiny muted center">Aage badhne par aap <a href="privacy.html" target="_blank">Privacy Policy</a> se sahmat hain.</p>
     </div>
@@ -172,6 +179,8 @@
       <div class="setGroup">
         <a class="setRow" href="privacy.html" target="_blank"><span>🔒 Privacy Policy</span><i>›</i></a>
         <button class="setRow" id="btnShareApp"><span>📤 App share karein</span><i>›</i></button>
+        <button class="setRow hidden" id="btnRate"><span>⭐ Play Store par rating dein</span><i>›</i></button>
+        <button class="setRow hidden" id="btnSupport"><span>✉️ Madad / Feedback</span><i>›</i></button>
       </div>
       <p class="tiny muted center">Vaidya Ashwani Live Call Translator · v<span id="appVer">1.0</span></p>
     </div>
@@ -194,6 +203,7 @@
     <div class="callTop">
       <div id="remoteName" class="cName">Connecting…</div>
       <div class="cSub"><span id="remoteLang">—</span> · <span id="callTimer">00:00</span> <span id="recDot" class="rec hidden">● REC</span></div>
+      <div id="recNotice" class="recNotice hidden">🔴 Saamne wala ye call record kar raha hai</div>
     </div>
     <div class="callBottom">
       <div id="callTranscript" class="transcript"></div>

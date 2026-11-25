@@ -156,9 +156,10 @@ class NativeBridge(private val act: MainActivity) {
     /* ======================= Call audio mode ======================= */
 
     @JavascriptInterface
-    fun setCallMode(on: Boolean) {
+    fun setCallMode(on: Boolean, video: Boolean) {
         main.post {
             act.keepScreenOn(on)
+            if (on) CallService.start(act, video) else CallService.stop(act)
             try {
                 if (on) {
                     audio.mode = AudioManager.MODE_IN_COMMUNICATION
@@ -249,6 +250,7 @@ class NativeBridge(private val act: MainActivity) {
     fun appVersion(): String = BuildConfig.VERSION_NAME
 
     fun shutdown() {
+        CallService.stop(act)
         try { recognizer?.destroy() } catch (_: Exception) {}
         try { tts?.shutdown() } catch (_: Exception) {}
         try { audio.mode = AudioManager.MODE_NORMAL } catch (_: Exception) {}

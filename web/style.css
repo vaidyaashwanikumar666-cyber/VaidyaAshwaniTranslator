@@ -272,3 +272,11 @@ input[type=range]{width:100%;accent-color:var(--g3)}
 .pdfDoc .who-me{background:#eef8f2}
 .pdfDoc .foot{margin-top:16px;font-size:11px;color:#777;text-align:center}
 #scrGuest .hero h1 #gHost{font-size:26px;font-weight:800;opacity:1}
+
+.permBox{margin-top:16px;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-size:13px}
+.permBox>b{display:block;margin-bottom:6px;font-size:14px}
+.permBox div{display:flex;gap:10px;align-items:flex-start;padding:4px 0}
+.permBox div span{font-size:18px;line-height:1.2}
+.permBox p{margin:0;color:var(--muted)} .permBox p b{color:var(--text)}
+.permBox small{display:block;margin-top:6px;color:var(--muted)}
+.recNotice{display:inline-block;margin-top:8px;background:rgba(229,56,59,.85);color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:99px}

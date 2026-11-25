@@ -174,7 +174,9 @@ class MainActivity : AppCompatActivity() {
     fun hasPerm(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 
     fun requestBasicPermissions() {
-        val need = listOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA).filter { !hasPerm(it) }
+        val all = mutableListOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA)
+        if (android.os.Build.VERSION.SDK_INT >= 33) all += Manifest.permission.POST_NOTIFICATIONS
+        val need = all.filter { !hasPerm(it) }
         if (need.isNotEmpty()) permLauncher.launch(need.toTypedArray())
     }
 
